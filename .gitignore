@@ -1,0 +1,16 @@
+# Ignoruj pliki stanu Terraforma (zawierają sekrety!)
+*.tfstate
+*.tfstate.*
+
+# Ignoruj katalog roboczy Terraforma (tam są pobrane wtyczki)
+.terraform/
+
+# Ignoruj pliki ze zmiennymi zawierającymi poufne dane (jeśli takie stworzysz)
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+
+# Ignoruj ukryte pliki konfiguracyjne
+.terraform.lock.hcl
+*.exe
