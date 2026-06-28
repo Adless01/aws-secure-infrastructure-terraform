@@ -5,3 +5,5 @@ crash.log
 *.tfvars
 # Wyjątek - chcemy wysłać plik produkcyjny jako wzór, ale bez haseł:
 !production.tfvars
+id_rsa
+id_rsa.pub
