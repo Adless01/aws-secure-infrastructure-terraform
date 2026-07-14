@@ -1,0 +1,54 @@
+name: "Terraform CI/CD Pipeline"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    name: "Terraform Lint, Validate and Apply"
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Pobranie kodu z repozytorium na maszynę wirtualną GitHuba
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. Konfiguracja dostępów do AWS przy użyciu Secretów
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1 # Zmień na swój region, np. eu-central-1
+
+    # 3. Instalacja Terraforma na maszynie GitHuba
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.0 # Zmień na wersję, której używasz
+
+    # 4. Inicjalizacja projektu (pobranie providerów AWS)
+    - name: Terraform Init
+      run: terraform init
+
+    # 5. Sprawdzenie formatowania kodu (Dobre praktyki / Linting)
+    - name: Terraform Format Check
+      run: terraform fmt -check
+
+    # 6. Walidacja poprawności konfiguracji pod kątem błędów składniowych
+    - name: Terraform Validate
+      run: terraform validate
+
+    # 7. Pokazanie planu zmian (odpala się zawsze, przydatne przy Pull Request)
+    - name: Terraform Plan
+      run: terraform plan -input=false
+
+    # 8. Realne wdrożenie na AWS (odpala się TYLKO przy pushu do gałęzi main)
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: terraform apply -auto-approve -input=false
