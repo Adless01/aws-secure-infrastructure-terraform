@@ -14,3 +14,5 @@ override.tf.json
 # Ignoruj ukryte pliki konfiguracyjne
 .terraform.lock.hcl
 *.exe
+id_rsa
+id_rsa.pub
