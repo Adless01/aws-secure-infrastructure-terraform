@@ -100,3 +100,12 @@ resource "aws_autoscaling_group" "app_asg" {
     create_before_destroy = true
   }
 }
+resource "aws_vpc" "test_vpc" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+
+  tags = {
+    Name        = "combatsec-test-vpc"
+    Environment = "dev"
+  }
+}
