@@ -44,11 +44,17 @@ jobs:
     - name: Terraform Validate
       run: terraform validate
 
-    # 7. Pokazanie planu zmian (odpala się zawsze, przydatne przy Pull Request)
+    # 7. Skanowanie kodu pod kątem bezpieczeństwa (SecOps)
+    - name: Run tfsec security scan
+      uses: aquasecurity/tfsec-action@v1.0.0
+      with:
+        soft_fail: true # Pozwala przejść dalej na zielono, nawet jeśli znajdzie podatności
+
+    # 8. Pokazanie planu zmian (odpala się zawsze, przydatne przy Pull Request)
     - name: Terraform Plan
       run: terraform plan -input=false
 
-    # 8. Realne wdrożenie na AWS (odpala się TYLKO przy pushu do gałęzi main)
+    # 9. Realne wdrożenie na AWS (odpala się TYLKO przy pushu do gałęzi main)
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       run: terraform apply -auto-approve -input=false
