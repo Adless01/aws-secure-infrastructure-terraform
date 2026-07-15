@@ -67,10 +67,10 @@ resource "aws_security_group" "app_sg" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "Allow traffic from ALB to application instances"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
+    description     = "Allow traffic from ALB to application instances"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
   }
 
