@@ -12,6 +12,12 @@ resource "aws_lb" "app_alb" {
     Name        = "${var.project_name}-${var.environment}-alb"
     Environment = var.environment
   }
+
+  depends_on = [
+    aws_internet_gateway.gw,
+    aws_security_group.alb_sg,
+    aws_subnet.public
+  ]
 }
 
 resource "aws_lb_target_group" "app_tg" {

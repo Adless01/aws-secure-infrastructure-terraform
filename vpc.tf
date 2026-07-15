@@ -96,6 +96,33 @@ resource "aws_s3_bucket" "flow_logs_bucket" {
 }
 
 # WŁAŚCIWY FLOW LOG - Aktywacja i powiązanie z VPC oraz S3
+resource "aws_s3_bucket_public_access_block" "flow_logs_bucket" {
+  bucket = aws_s3_bucket.flow_logs_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "flow_logs_bucket" {
+  bucket = aws_s3_bucket.flow_logs_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_versioning" "flow_logs_bucket" {
+  bucket = aws_s3_bucket.flow_logs_bucket.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 resource "aws_flow_log" "main_flow_log" {
   log_destination      = aws_s3_bucket.flow_logs_bucket.arn
   log_destination_type = "s3"
@@ -106,4 +133,9 @@ resource "aws_flow_log" "main_flow_log" {
     Name        = "${var.project_name}-${var.environment}-flow-log"
     Environment = var.environment
   }
+
+  depends_on = [
+    aws_s3_bucket_public_access_block.flow_logs_bucket,
+    aws_s3_bucket_server_side_encryption_configuration.flow_logs_bucket
+  ]
 }
