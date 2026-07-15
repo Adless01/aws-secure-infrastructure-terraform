@@ -1,10 +1,13 @@
-# 1. Security Group dla Load Balancera (ALB)
+# ==========================================
+# 1. SECURITY GROUP DLA LOAD BALANCERA (ALB)
+# ==========================================
 resource "aws_security_group" "alb_sg" {
   name        = "${var.project_name}-${var.environment}-alb-sg"
-  description = "Allow public HTTP traffic to Load Balancer"
+  description = "Security group for Application Load Balancer allowing public HTTP traffic"
   vpc_id      = aws_vpc.main.id
 
   ingress {
+    description = "Allow public HTTP traffic to ALB"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -12,6 +15,7 @@ resource "aws_security_group" "alb_sg" {
   }
 
   egress {
+    description = "Allow ALB to send outbound traffic anywhere"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -24,20 +28,24 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# 2. Security Group dla Bastiona
+# ==========================================
+# 2. SECURITY GROUP DLA BASTION HOSTA
+# ==========================================
 resource "aws_security_group" "bastion_sg" {
   name        = "${var.project_name}-${var.environment}-bastion-sg"
-  description = "Allow SSH access to Bastion Host"
+  description = "Security group for Bastion Host allowing SSH access"
   vpc_id      = aws_vpc.main.id
 
   ingress {
+    description = "Allow public SSH access to Bastion (In prod, restrict to corporate VPN IP)"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # W pracy podaje się tu IP firmowego VPN
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
+    description = "Allow Bastion to send outbound traffic anywhere"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -50,22 +58,24 @@ resource "aws_security_group" "bastion_sg" {
   }
 }
 
-# 3. Security Group dla Serwerów Aplikacji (Prywatnych)
+# ==========================================
+# 3. SECURITY GROUP DLA INSTANCJI APLIKACYJNYCH (APP)
+# ==========================================
 resource "aws_security_group" "app_sg" {
   name        = "${var.project_name}-${var.environment}-app-sg"
-  description = "Security Group dla serwerow aplikacji"
+  description = "Security group for application instances restricting access to ALB and Bastion"
   vpc_id      = aws_vpc.main.id
 
-  # Ruch HTTP wpuszczamy TYLKO z Load Balancera
   ingress {
+    description     = "Allow HTTP traffic exclusively from ALB"
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
   }
 
-  # SSH wpuszczamy TYLKO przez Bastion (Wzorcowy SecOps!)
   ingress {
+    description     = "Allow SSH access exclusively from Bastion Host"
     from_port       = 22
     to_port         = 22
     protocol        = "tcp"
@@ -73,6 +83,7 @@ resource "aws_security_group" "app_sg" {
   }
 
   egress {
+    description = "Allow instances to access the internet (updates, patching)"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
