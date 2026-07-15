@@ -29,13 +29,13 @@ resource "aws_instance" "bastion" {
   key_name               = aws_key_pair.deployer.key_name
 
   tags = {
-    Name        = "SecOps-Bastion-Host"
-    Environment = "Production"
+    Name        = "${var.project_name}-${var.environment}-bastion"
+    Environment = var.environment
   }
 }
 
 resource "aws_launch_template" "app_lt" {
-  name_prefix   = "SecOps-App-LT-"
+  name_prefix   = "${var.project_name}-${var.environment}-lt-"
   image_id      = "ami-0ec7f9846da6b0f61" # Upewnij się, że masz tu swoje sprawne AMI z Ubuntu
   instance_type = var.instance_type
 
@@ -79,7 +79,7 @@ resource "aws_launch_template" "app_lt" {
 
 # 5. AUTO SCALING GROUP (ASG) - Zarządzanie flotą serwerów
 resource "aws_autoscaling_group" "app_asg" {
-  name_prefix         = "SecOps-App-ASG-"
+  name_prefix         = "${var.project_name}-${var.environment}-asg-"
   desired_capacity    = 2 # Chcemy, aby zawsze działały dokładnie 2 maszyny
   max_size            = 4 # W razie potężnego ruchu system może dołożyć do 4 maszyn
   min_size            = 1 # W razie przestoju minimum 1 maszyna musi żyć
