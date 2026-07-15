@@ -5,16 +5,17 @@ A production-ready, highly secure, and fully automated infrastructure deployed o
 ---
 
 ## 🛠️ Architecture & CI/CD Flow
+
+```text
 [ Local Code (VS Code) ] ──(git push)──> [ GitHub Repository ]
-│
-▼
-[ GitHub Actions Runner ]
-│
-(Automated Checks: FMT -> INIT -> PLAN)
-│
-▼
+                                                 │
+                                                 ▼
+                                      [ GitHub Actions Runner ]
+                                                 │
+                     (Automated Checks: FMT -> INIT -> PLAN)
+                                                 │
+                                                 ▼
 [ AWS S3 Backend (State Lock) ] <─────────> [ AWS Cloud ]
----
 
 ## 🏗️ Key Features
 
