@@ -17,7 +17,7 @@ data "aws_ami" "ubuntu" {
 # 2. Rejestracja Twojego klucza SSH w AWS
 resource "aws_key_pair" "deployer" {
   key_name   = "${var.project_name}-${var.environment}-key"
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDv2giSwE9E617sDF+hOYRoNPiUbs1BtwcwyBkA5krGPA4C8/S6Se1UhK1cPu38RdgsbumdLmrxUi/qVUjlzCuAHka0ZF9zTgI1iJisE5jQCI18b8FTNTE0DAN5sfthxaE1PLNDefEtK4gxJTQAlawVvugxhtxtHZO/VeId1OJu+dI2ksq6YIpNUsSG6d0SPDUnUTz4YSq0y8uc4Ss3BAyqNi7gH0dUYBhH8ptHZAYaXDRJxbDQeBZk5PuVsl0nNAAjWn8DDsmu67qhuGk483s+6khfUaZVCjttkP10Z0x8t+YAWvZNaaMR4CRk2vfupLyAuaMAYgV2LGX8D+SAPKiJ adaml@AdamLesie" # Tutaj wklej CAŁY swój klucz publiczny (zaczynający się od ssh-rsa)
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDv2giSwE9E617sDF+hOYRoNPiUbs1BtwcwyBkA5krGPA4C8/S6Se1UhK1cPu38RdgsbumdLmrxUi/qVUjlzCuAHka0ZF9zTgI1iJisE5jQCI18b8FTNTE0DAN5sfthxaE1PLNDefEtK4gxJTQAlawVvugxhtxtHZO/VeId1OJu+dI2ksq6YIpNUsSG6d0SPDUnUTz4YSq0y8uc4Ss3BAyqNi7gH0dUYBhH8ptHZAYaXDRJxbDQeBZk5PuVsl0nNAAjWn8DDsmu67qhuGk483s+6khfUaZVCjttkP10Z0x8t+YAWvZNaaMR4CRk2vfupLyAuaMAYgV2LGX8D+SAPKiJ adaml@AdamLesie"
 }
 
 # 3. Bastion Host (Punkt wejścia SSH - w pierwszej podsieci publicznej)
@@ -28,23 +28,44 @@ resource "aws_instance" "bastion" {
   vpc_security_group_ids = [aws_security_group.bastion_sg.id]
   key_name               = aws_key_pair.deployer.key_name
 
+  # === ROZWIĄZANIE BŁĘDU HIGH (Szyfrowanie dysku) ===
+  root_block_device {
+    encrypted   = true
+    volume_type = "gp3"
+  }
+
+  # === ROZWIĄZANIE BŁĘDU HIGH (Wymuszenie IMDSv2) ===
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required" # Wymusza pobieranie tokena
+    http_put_response_hop_limit = 1
+  }
+
   tags = {
     Name        = "${var.project_name}-${var.environment}-bastion"
     Environment = var.environment
   }
 }
 
+# 4. Launch Template dla maszyn aplikacyjnych
 resource "aws_launch_template" "app_lt" {
   name_prefix   = "${var.project_name}-${var.environment}-lt-"
-  image_id      = "ami-0ec7f9846da6b0f61" # Upewnij się, że masz tu swoje sprawne AMI z Ubuntu
+  image_id      = data.aws_ami.ubuntu.id # Używamy pobranego dynamicznie AMI Ubuntu 24.04
   instance_type = var.instance_type
 
-  # TA SEKRETA SEKCJA WYMUSI PUBLICZNE IP DLA MASZYN:
   network_interfaces {
     associate_public_ip_address = true
     security_groups             = [aws_security_group.app_sg.id]
   }
 
+  # === ROZWIĄZANIE BŁĘDU HIGH (Wymuszenie IMDSv2 dla Auto Scaling Group) ===
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
+
+  # Twój skrypt instalacyjny Nginxa przekonwertowany na Base64
   user_data = base64encode(<<-EOF
               #!/bin/bash
               # Przekierowanie wszystkich logów do pliku, żeby sprawdzić co poszło nie tak
@@ -90,22 +111,5 @@ resource "aws_autoscaling_group" "app_asg" {
   launch_template {
     id      = aws_launch_template.app_lt.id
     version = "$Latest"
-  }
-
-  # Informujemy AWS, żeby przy decyzjach o skalowaniu brał pod uwagę stan zdrowia z Load Balancera
-  health_check_type         = "ELB"
-  health_check_grace_period = 300
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-resource "aws_vpc" "test_vpc" {
-  cidr_block           = "10.0.0.0/16"
-  enable_dns_hostnames = true
-
-  tags = {
-    Name        = "combatsec-test-vpc"
-    Environment = "dev"
   }
 }
