@@ -5,6 +5,9 @@ resource "aws_lb" "app_alb" {
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = aws_subnet.public[*].id
 
+  # === TA LINIJKA ZAŁATWIA BŁĄD HIGH (Result #10) ===
+  drop_invalid_header_fields = true
+
   tags = {
     Name        = "${var.project_name}-${var.environment}-alb"
     Environment = var.environment
