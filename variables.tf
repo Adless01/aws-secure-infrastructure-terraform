@@ -34,3 +34,9 @@ variable "asg_max_size" {
   type        = number
   default     = 2
 }
+
+variable "allowed_ssh_cidr" {
+  description = "CIDR allowed to SSH into the bastion host"
+  type        = string
+  default     = "203.0.113.10/32"
+}
